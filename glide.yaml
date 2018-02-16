@@ -1,0 +1,8 @@
+package: gitlab.com/salismt/microservice-pattern-user-service
+import:
+- package: github.com/gorilla/mux
+  version: ^1.6.1
+- package: github.com/lib/pq
+- package: github.com/codegangsta/negroni
+  version: ^0.3.0
+- package: github.com/jmoiron/sqlx

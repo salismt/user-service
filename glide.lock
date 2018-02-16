@@ -1,0 +1,12 @@
+hash: 8213bccfeb7f6aa81d110f8fedee676d1043451e2420bcaa9e0242a924761772
+updated: 2018-02-16T22:33:29.243633+05:30
+imports:
+- name: github.com/codegangsta/negroni
+  version: 5dbbc83f748fc3ad38585842b0aedab546d0ea1e
+- name: github.com/gorilla/mux
+  version: 53c1911da2b537f792e7cafcb446b05ffe33b996
+- name: github.com/jmoiron/sqlx
+  version: 05b81a7d5d38058e42148dc01f17daf4acba4640
+- name: github.com/lib/pq
+  version: ae8357db35d721c58dcdc911318b55bef6b1b001
+testImports: []
