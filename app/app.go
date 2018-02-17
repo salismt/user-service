@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"github.com/jmoiron/sqlx"
@@ -9,15 +9,17 @@ import (
 	"encoding/json"
 	"strconv"
 	"database/sql"
+	"gitlab.com/salismt/microservice-pattern-user-service/cache"
+	"gitlab.com/salismt/microservice-pattern-user-service/model"
 )
 
 type App struct {
 	DB *sqlx.DB
 	Router *mux.Router
-	Cache Cache
+	Cache cache.Cache
 }
 
-func (a *App) Initialize(cache Cache, db *sqlx.DB) {
+func (a *App) Initialize(cache cache.Cache, db *sqlx.DB) {
 
 	a.DB = db
 	a.Router = mux.NewRouter()
@@ -48,7 +50,7 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get user from Cache first
-	if value, err := a.Cache.getValue(id); err == nil && len(value) != 0 {
+	if value, err := a.Cache.GetValue(id); err == nil && len(value) != 0 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(value))
@@ -56,8 +58,8 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// else get it from db
-	user := User{ID: id}
-	if err := user.get(a.DB); err != nil {
+	user := model.User{ID: id}
+	if err := user.Get(a.DB); err != nil {
 		switch err {
 		case sql.ErrNoRows:
 			respondWithError(w, http.StatusNotFound, "User not found")
@@ -69,7 +71,7 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 
 	// save it to cache
 	response, err := json.Marshal(user)
-	if err := a.Cache.setValue(user.ID, response); err != nil {
+	if err := a.Cache.SetValue(user.ID, response); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -92,7 +94,7 @@ func (a *App) getUsers(w http.ResponseWriter, r *http.Request) {
 		start = 0
 	}
 
-	users, err := list(a.DB, start, count)
+	users, err := model.List(a.DB, start, count)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -102,7 +104,7 @@ func (a *App) getUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
-	var user User
+	var user model.User
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&user); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
@@ -111,7 +113,7 @@ func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	if err := user.create(a.DB); err != nil {
+	if err := user.Create(a.DB); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -127,7 +129,7 @@ func (a *App) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user User
+	var user model.User
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&user); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
@@ -137,7 +139,7 @@ func (a *App) updateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	user.ID = id
 
-	if err := user.update(a.DB); err != nil {
+	if err := user.Update(a.DB); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -153,8 +155,8 @@ func (a *App) deleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := User{ID: id}
-	if err := user.delete(a.DB); err != nil {
+	user := model.User{ID: id}
+	if err := user.Delete(a.DB); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

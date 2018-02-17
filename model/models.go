@@ -1,4 +1,4 @@
-package main
+package model
 
 import (
 	"github.com/jmoiron/sqlx"
@@ -12,12 +12,12 @@ type User struct {
 	Password string `json:"password" db:"password"`
 }
 
-func (u *User) get(db *sqlx.DB) error {
+func (u *User) Get(db *sqlx.DB) error {
 	return db.Get(u, "SELECT name, email, FROM users WHERE id=$1",
 		u.ID)
 }
 
-func (u *User) update(db *sqlx.DB) error {
+func (u *User) Update(db *sqlx.DB) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword(
 		[]byte(u.Password),
 		bcrypt.DefaultCost,
@@ -32,12 +32,12 @@ func (u *User) update(db *sqlx.DB) error {
 	return err
 }
 
-func (u *User) delete(db *sqlx.DB) error {
+func (u *User) Delete(db *sqlx.DB) error {
 	_, err := db.Exec("DELETE FROM users WHERE id=$1", u.ID)
 	return err
 }
 
-func (u *User) create(db *sqlx.DB) error {
+func (u *User) Create(db *sqlx.DB) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword(
 		[]byte(u.Password),
 		bcrypt.DefaultCost,
@@ -51,7 +51,7 @@ func (u *User) create(db *sqlx.DB) error {
 			string(hashedPassword)).Scan(&u.ID)
 }
 
-func list(db *sqlx.DB, start, count int) ([]User, error) {
+func List(db *sqlx.DB, start, count int) ([]User, error) {
 	users := []User{}
 	err := db.Select(&users, "SELECT id, name, email, FROM users LIMIT $1 OFFSET $2", count, start)
 	if err != nil {

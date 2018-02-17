@@ -3,34 +3,42 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"log"
+	"gitlab.com/salismt/microservice-pattern-user-service/config"
+	"gitlab.com/salismt/microservice-pattern-user-service/cache"
+	"gitlab.com/salismt/microservice-pattern-user-service/app"
 )
 
 func main() {
-	cache := Cache{Enable: true}
+	config := config.BaseConfig{}
+	config.Load()
+
+	fmt.Printf("Port is %s", config.GetValue("port"))
+	fmt.Printf("Redis is %s", config.GetValue("APP_RD_ADDRESS"))
+
+	cache := cache.Cache{Enable: true}
 
 	// flag to receive information directly from the command line
 	flag.StringVar(
 		&cache.Address,
 		"redis_address",
-		os.Getenv("APP_RD_ADDRESS"),
+		config.GetValue("APP_RD_ADDRESS"),
 		"Redis Address",
 	)
 
 	flag.StringVar(
 		&cache.Auth,
 		"redis_auth",
-		os.Getenv("APP_RD_AUTH"),
+		config.GetValue("APP_RD_AUTH"),
 		"Redis Auth",
 	)
 
 	flag.StringVar(
 		&cache.DB,
 		"redis_db_name",
-		os.Getenv("APP_RB_DBNAME"),
+		config.GetValue("APP_RB_DBNAME"),
 		"Redis DB Name",
 	)
 
@@ -53,9 +61,9 @@ func main() {
 
 	connectionString := fmt.Sprintf(
 		"user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("APP_DB_USERNAME"),
-		os.Getenv("APP_DB_PASSWORD"),
-		os.Getenv("APP_DB_NAME"),
+		config.GetValue("APP_DB_USERNAME"),
+		config.GetValue("APP_DB_PASSWORD"),
+		config.GetValue("APP_DB_NAME"),
 	)
 
 	db, err := sqlx.Open("postgres", connectionString)
@@ -63,7 +71,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	a := App{}
+	a := app.App{}
 	a.Initialize(cache, db)
 	a.Run(":8080")
 }

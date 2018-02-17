@@ -1,3 +1,6 @@
 APP_DB_USERNAME: "postgres"
 APP_DB_PASSWORD: ""
 APP_DB_NAME: "learn_micro_users"
+APP_RD_ADDRESS: "localhost:6379"
+APP_RD_AUTH: "redis"
+APP_RB_DBNAME: "0"
