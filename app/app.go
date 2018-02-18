@@ -9,17 +9,19 @@ import (
 	"encoding/json"
 	"strconv"
 	"database/sql"
-	"gitlab.com/salismt/microservice-pattern-user-service/cache"
+	"gitlab.com/salismt/microservice-pattern-user-service/caches"
 	"gitlab.com/salismt/microservice-pattern-user-service/model"
 )
 
+const CreateUsersQueue = "CREATE_USER"
+
 type App struct {
-	DB *sqlx.DB
+	DB     *sqlx.DB
 	Router *mux.Router
-	Cache cache.Cache
+	Cache  caches.Cache
 }
 
-func (a *App) Initialize(cache cache.Cache, db *sqlx.DB) {
+func (a *App) Initialize(cache caches.Cache, db *sqlx.DB) {
 
 	a.DB = db
 	a.Router = mux.NewRouter()
@@ -113,7 +115,21 @@ func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	if err := user.Create(a.DB); err != nil {
+	// get sequence from Postgres
+	a.DB.Get(&user.ID, "SELECT nextval('users_id_seq')")
+
+	JSONByte, err := json.Marshal(user)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if err := a.Cache.SetValue(user.ID, string(JSONByte)); err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if err := a.Cache.EnqueueValue(CreateUsersQueue, user.ID); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

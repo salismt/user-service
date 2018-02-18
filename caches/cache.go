@@ -1,4 +1,4 @@
-package cache
+package caches
 
 import (
 	redigo "github.com/garyburd/redigo/redis"
@@ -78,6 +78,17 @@ func (cache *Cache) SetValue(key interface{}, value interface{}) error {
 		conn := cache.Pool.Get()
 		defer conn.Close()
 		_, err := redigo.String(conn.Do("SET", key, value))
+		return err
+	}
+	return nil
+}
+
+// storing the keys in the queues
+func (cache *Cache) EnqueueValue(queue string, uuid int) error {
+	if cache.Enable {
+		conn := cache.Pool.Get()
+		defer conn.Close()
+		_, err := conn.Do("RPUSH", queue, uuid)
 		return err
 	}
 	return nil

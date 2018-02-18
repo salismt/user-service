@@ -7,8 +7,15 @@ import (
 	_ "github.com/lib/pq"
 	"log"
 	"gitlab.com/salismt/microservice-pattern-user-service/config"
-	"gitlab.com/salismt/microservice-pattern-user-service/cache"
+	"gitlab.com/salismt/microservice-pattern-user-service/caches"
 	"gitlab.com/salismt/microservice-pattern-user-service/app"
+	"gitlab.com/salismt/microservice-pattern-user-service/worker"
+)
+
+const (
+	CreateUsersQueue = "CREATE_USER"
+	UpdateUsersQueue = "UPDATE_USER"
+	DeleteUsersQueue = "DELETE_USER"
 )
 
 func main() {
@@ -18,7 +25,8 @@ func main() {
 	fmt.Printf("Port is %s", config.GetValue("port"))
 	fmt.Printf("Redis is %s", config.GetValue("APP_RD_ADDRESS"))
 
-	cache := cache.Cache{Enable: true}
+	var numWorkers int
+	cache := caches.Cache{Enable: true}
 
 	// flag to receive information directly from the command line
 	flag.StringVar(
@@ -56,6 +64,13 @@ func main() {
 		"Redis timeout in seconds",
 	)
 
+	flag.IntVar(
+		&numWorkers,
+		"num_workers",
+		10,
+		"Numer of workers to consume queue",
+	)
+
 	flag.Parse()
 	cache.Pool = cache.NewCachePool()
 
@@ -70,6 +85,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	go worker.UsersToDB(numWorkers, db, &cache, CreateUsersQueue)
+	go worker.UsersToDB(numWorkers, db, &cache, UpdateUsersQueue)
+	go worker.UsersToDB(numWorkers, db, &cache, DeleteUsersQueue)
 
 	a := app.App{}
 	a.Initialize(cache, db)
