@@ -76,9 +76,9 @@ func main() {
 
 	connectionString := fmt.Sprintf(
 		"user=%s password=%s dbname=%s sslmode=disable",
-		config.GetValue("APP_DB_USERNAME"),
-		config.GetValue("APP_DB_PASSWORD"),
-		config.GetValue("APP_DB_NAME"),
+		config.GetValue("POSTGRES_USER"),
+		config.GetValue("POSTGRES_PASSWORD"),
+		config.GetValue("POSTGRES_DB"),
 	)
 
 	db, err := sqlx.Open("postgres", connectionString)
@@ -92,5 +92,5 @@ func main() {
 
 	a := app.App{}
 	a.Initialize(cache, db)
-	a.Run(":8080")
+	a.Run(fmt.Sprintf(":%s", config.GetValue("port")))
 }

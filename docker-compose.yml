@@ -1,19 +1,46 @@
-version: "3"
-services:
+version: '2.1'
 
+services:
   redis:
+    container_name: redis
     image: redis:alpine
     ports:
       - "6379:6379"
     command: >
       --requirepass redis
+    healthcheck:
+      test: exit 0
 
-  db:
-    image: postgres:10.0-alpine
+  users-service-db:
+    container_name: users-service-db
+    build: ./db
     ports:
-      - "5432:5432"
-    volumes:
-      - ./.dbdata://var/lib/postgresql/data
+      - "5432:5432" # expose ports - HOST:CONTAINER
     environment:
-      - POSTGRES_DB=learn_micro_users
       - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: exit 0
+
+  userservice:
+    container_name: userservice
+    image: userservice
+    build: .
+    environment:
+      - APP_RD_ADDRESS=redis:6379
+      - APP_RD_AUTH=password
+      - APP_RD_DBNAME=0
+      - APP_SETTINGS=project.config.DevelopmentConfig
+      - DATABASE_URL=postgres://postgres:postgres@user-service-db:5432/users_prod?sslmode=disable
+      - DATABASE_DEV_URL=postgres://postgres:postgres@user-service-db:5432/users_dev?sslmode=disable
+      - DATABASE_TEST_URL=postgres://postgres:postgres@user-service-db:5432/users_test?sslmode=disable
+    depends_on:
+      users-service-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - 8080:3000
+    links:
+      - users-service-db
+      - redis
