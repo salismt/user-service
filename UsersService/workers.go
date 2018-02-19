@@ -1,24 +1,22 @@
-package worker
+package main
 
 import (
 	"encoding/json"
 	redigo "github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"log"
-	"gitlab.com/salismt/microservice-pattern-user-service/model"
 	"sync"
 	"fmt"
-	"gitlab.com/salismt/microservice-pattern-user-service/caches"
 )
 
 type Worker struct {
-	cache *caches.Cache
+	cache *Cache
 	db    *sqlx.DB
 	id    int
 	queue string
 }
 
-func newWorker(id int, db *sqlx.DB, c *caches.Cache, queue string) Worker {
+func newWorker(id int, db *sqlx.DB, c *Cache, queue string) Worker {
 	return Worker{cache: c, db: db, id: id, queue: queue}
 }
 
@@ -42,7 +40,7 @@ func (w Worker) process(id int) {
 				continue
 			}
 
-			user := model.User{}
+			user := User{}
 			if err := json.Unmarshal([]byte(values), &user); err != nil {
 				w.cache.EnqueueValue(w.queue, uuid)
 				continue
@@ -63,12 +61,12 @@ func (w Worker) process(id int) {
 
 // creates number of workers for the queue to instantiate additionally
 // initialize the workers asynchronously
-func UsersToDB(numWorkers int, db *sqlx.DB, cache *caches.Cache, queue string) {
+func UsersToDB(numWorkers int, db *sqlx.DB, cache *Cache, queue string) {
 	cache.EnqueueValue("da", 123)
 	var wg sync.WaitGroup
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(i)
-		go func(id int, db *sqlx.DB, c *caches.Cache, queue string) {
+		go func(id int, db *sqlx.DB, c *Cache, queue string) {
 			fmt.Println(c)
 			worker := newWorker(i, db, c, queue)
 			worker.process(i)

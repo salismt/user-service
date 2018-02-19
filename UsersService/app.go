@@ -1,4 +1,4 @@
-package app
+package main
 
 import (
 	"github.com/jmoiron/sqlx"
@@ -9,19 +9,15 @@ import (
 	"encoding/json"
 	"strconv"
 	"database/sql"
-	"gitlab.com/salismt/microservice-pattern-user-service/caches"
-	"gitlab.com/salismt/microservice-pattern-user-service/model"
 )
-
-const CreateUsersQueue = "CREATE_USER"
 
 type App struct {
 	DB     *sqlx.DB
 	Router *mux.Router
-	Cache  caches.Cache
+	Cache  Cache
 }
 
-func (a *App) Initialize(cache caches.Cache, db *sqlx.DB) {
+func (a *App) Initialize(cache Cache, db *sqlx.DB) {
 
 	a.DB = db
 	a.Router = mux.NewRouter()
@@ -60,7 +56,7 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// else get it from db
-	user := model.User{ID: id}
+	user := User{ID: id}
 	if err := user.Get(a.DB); err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -96,7 +92,7 @@ func (a *App) getUsers(w http.ResponseWriter, r *http.Request) {
 		start = 0
 	}
 
-	users, err := model.List(a.DB, start, count)
+	users, err := List(a.DB, start, count)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -106,7 +102,7 @@ func (a *App) getUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
-	var user model.User
+	var user User
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&user); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
@@ -145,7 +141,7 @@ func (a *App) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user model.User
+	var user User
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&user); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
@@ -171,7 +167,7 @@ func (a *App) deleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := model.User{ID: id}
+	user := User{ID: id}
 	if err := user.Delete(a.DB); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return

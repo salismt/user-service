@@ -6,10 +6,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"log"
-	"gitlab.com/salismt/microservice-pattern-user-service/config"
-	"gitlab.com/salismt/microservice-pattern-user-service/caches"
-	"gitlab.com/salismt/microservice-pattern-user-service/app"
-	"gitlab.com/salismt/microservice-pattern-user-service/worker"
 )
 
 const (
@@ -19,14 +15,14 @@ const (
 )
 
 func main() {
-	config := config.BaseConfig{}
+	config := BaseConfig{}
 	config.Load()
 
 	fmt.Printf("Port is %s", config.GetValue("port"))
 	fmt.Printf("Redis is %s", config.GetValue("APP_RD_ADDRESS"))
 
 	var numWorkers int
-	cache := caches.Cache{Enable: true}
+	cache := Cache{Enable: true}
 
 	// flag to receive information directly from the command line
 	flag.StringVar(
@@ -86,11 +82,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	go worker.UsersToDB(numWorkers, db, &cache, CreateUsersQueue)
-	go worker.UsersToDB(numWorkers, db, &cache, UpdateUsersQueue)
-	go worker.UsersToDB(numWorkers, db, &cache, DeleteUsersQueue)
+	go UsersToDB(numWorkers, db, &cache, CreateUsersQueue)
+	go UsersToDB(numWorkers, db, &cache, UpdateUsersQueue)
+	go UsersToDB(numWorkers, db, &cache, DeleteUsersQueue)
 
-	a := app.App{}
+	a := App{}
 	a.Initialize(cache, db)
 	a.Run(fmt.Sprintf(":%s", config.GetValue("port")))
 }

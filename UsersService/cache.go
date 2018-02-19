@@ -1,4 +1,4 @@
-package caches
+package main
 
 import (
 	redigo "github.com/garyburd/redigo/redis"
@@ -35,10 +35,10 @@ func (cache *Cache) NewCachePool() *redigo.Pool {
 					return nil, err
 				}
 
-				if _, err = c.Do("AUTH", cache.Auth); err != nil {
-					c.Close()
-					return nil, err
-				}
+				//if _, err = c.Do("AUTH", cache.Auth); err != nil {
+				//	c.Close()
+				//	return nil, err
+				//}
 
 				if _, err = c.Do("SELECT", cache.DB); err != nil {
 					c.Close()

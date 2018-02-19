@@ -6,8 +6,6 @@ services:
     image: redis:alpine
     ports:
       - "6379:6379"
-    command: >
-      --requirepass redis
     healthcheck:
       test: exit 0
 
@@ -15,7 +13,7 @@ services:
     container_name: users-service-db
     build: ./db
     ports:
-      - "5432:5432" # expose ports - HOST:CONTAINER
+      - 5432:5432 # expose ports - HOST:CONTAINER
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -23,9 +21,10 @@ services:
       test: exit 0
 
   userservice:
-    container_name: userservice
     image: userservice
-    build: .
+    build: ./UsersService
+    ports:
+      - 3000:3000
     environment:
       - APP_RD_ADDRESS=redis:6379
       - APP_RD_AUTH=password
@@ -39,8 +38,14 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - 8080:3000
     links:
       - users-service-db
       - redis
+
+  proxy:
+    container_name: userservice_loadbalance
+    build: ./nginx
+    ports:
+      - "80:80"
+    links:
+      - userservice
