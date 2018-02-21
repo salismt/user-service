@@ -6,6 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"log"
+	"os"
 )
 
 const (
@@ -70,16 +71,12 @@ func main() {
 	flag.Parse()
 	cache.Pool = cache.NewCachePool()
 
-	connectionString := fmt.Sprintf(
-		"user=%s password=%s dbname=%s sslmode=disable",
-		config.GetValue("POSTGRES_USER"),
-		config.GetValue("POSTGRES_PASSWORD"),
-		config.GetValue("POSTGRES_DB"),
-	)
+	connectionString := os.Getenv("DATABASE_DEV_URL")
 
 	db, err := sqlx.Open("postgres", connectionString)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+		log.Fatal(err.Error())
 	}
 
 	go UsersToDB(numWorkers, db, &cache, CreateUsersQueue)

@@ -53,7 +53,7 @@ func (u *User) Create(db *sqlx.DB) error {
 
 func List(db *sqlx.DB, start, count int) ([]User, error) {
 	users := []User{}
-	err := db.Select(&users, "SELECT id, name, email, FROM users LIMIT $1 OFFSET $2", count, start)
+	err := db.Select(&users, "SELECT id, name, email FROM users LIMIT $1 OFFSET $2", count, start)
 	if err != nil {
 		return nil, err
 	}

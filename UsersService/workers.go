@@ -6,7 +6,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log"
 	"sync"
-	"fmt"
 )
 
 type Worker struct {
@@ -62,16 +61,15 @@ func (w Worker) process(id int) {
 // creates number of workers for the queue to instantiate additionally
 // initialize the workers asynchronously
 func UsersToDB(numWorkers int, db *sqlx.DB, cache *Cache, queue string) {
-	cache.EnqueueValue("da", 123)
 	var wg sync.WaitGroup
 	for i := 0; i < numWorkers; i++ {
-		wg.Add(i)
+		wg.Add(1)
 		go func(id int, db *sqlx.DB, c *Cache, queue string) {
-			fmt.Println(c)
 			worker := newWorker(i, db, c, queue)
 			worker.process(i)
 			defer wg.Done()
 
 		}(i, db, cache, queue)
 	}
+	wg.Done()
 }

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"database/sql"
+	"fmt"
 )
 
 type App struct {
@@ -62,6 +63,7 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 		case sql.ErrNoRows:
 			respondWithError(w, http.StatusNotFound, "User not found")
 		default:
+			fmt.Println(err.Error())
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 		}
 		return
@@ -70,6 +72,7 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 	// save it to cache
 	response, err := json.Marshal(user)
 	if err := a.Cache.SetValue(user.ID, response); err != nil {
+		fmt.Println(err.Error())
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -94,6 +97,7 @@ func (a *App) getUsers(w http.ResponseWriter, r *http.Request) {
 
 	users, err := List(a.DB, start, count)
 	if err != nil {
+		fmt.Println(err.Error())
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
